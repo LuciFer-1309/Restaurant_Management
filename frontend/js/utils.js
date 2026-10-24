@@ -84,47 +84,48 @@ export function formatDate(isoString) {
 /**
  * Returns HTML for a styled status badge based on entity and status value.
  *
- * @param {string} status - Status code
+ * @param {string|boolean|number} status - Status code or boolean
  * @param {'table'|'order'|'reservation'|'payment'|'availability'} [type='order']
  * @returns {string} HTML markup
  */
 export function renderBadge(status, type = "order") {
-  if (!status) return `<span class="badge badge-neutral">—</span>`;
+  if (status === null || status === undefined || status === "") {
+    return `<span class="badge badge-neutral">—</span>`;
+  }
 
-  const s = String(status).toLowerCase();
   let badgeClass = "badge-neutral";
-  let label = status.replace(/_/g, " ");
+  let label = "";
 
-  // Normalize label capitalize
-  label = label.charAt(0).toUpperCase() + label.slice(1);
+  if (type === "availability" || typeof status === "boolean") {
+    const isAvail = status === true || status === "true" || status === "available" || status === 1;
+    badgeClass = isAvail ? "badge-success" : "badge-danger";
+    label = isAvail ? "Available" : "Unavailable";
+  } else {
+    const statusStr = String(status);
+    const s = statusStr.toLowerCase().trim();
+    label = statusStr.replace(/_/g, " ");
+    label = label.charAt(0).toUpperCase() + label.slice(1);
 
-  if (type === "table") {
-    if (s === "available") badgeClass = "badge-success";
-    else if (s === "occupied") badgeClass = "badge-warning";
-    else if (s === "reserved") badgeClass = "badge-info";
-  } else if (type === "order") {
-    if (s === "placed") badgeClass = "badge-info";
-    else if (s === "preparing") badgeClass = "badge-warning";
-    else if (s === "ready") badgeClass = "badge-primary";
-    else if (s === "completed") badgeClass = "badge-success";
-    else if (s === "cancelled") badgeClass = "badge-danger";
-  } else if (type === "reservation") {
-    if (s === "booked") badgeClass = "badge-info";
-    else if (s === "confirmed") badgeClass = "badge-primary";
-    else if (s === "completed") badgeClass = "badge-success";
-    else if (s === "cancelled") badgeClass = "badge-danger";
-  } else if (type === "payment") {
-    if (s === "completed") badgeClass = "badge-success";
-    else if (s === "pending") badgeClass = "badge-warning";
-    else if (s === "failed") badgeClass = "badge-danger";
-    else if (s === "refunded") badgeClass = "badge-neutral";
-  } else if (type === "availability") {
-    if (s === "true" || s === "available" || status === true) {
-      badgeClass = "badge-success";
-      label = "Available";
-    } else {
-      badgeClass = "badge-danger";
-      label = "Unavailable";
+    if (type === "table") {
+      if (s === "available") badgeClass = "badge-success";
+      else if (s === "occupied") badgeClass = "badge-warning";
+      else if (s === "reserved") badgeClass = "badge-info";
+    } else if (type === "order") {
+      if (s === "placed") badgeClass = "badge-info";
+      else if (s === "preparing") badgeClass = "badge-warning";
+      else if (s === "ready") badgeClass = "badge-primary";
+      else if (s === "completed") badgeClass = "badge-success";
+      else if (s === "cancelled") badgeClass = "badge-danger";
+    } else if (type === "reservation") {
+      if (s === "booked") badgeClass = "badge-info";
+      else if (s === "confirmed") badgeClass = "badge-primary";
+      else if (s === "completed") badgeClass = "badge-success";
+      else if (s === "cancelled") badgeClass = "badge-danger";
+    } else if (type === "payment") {
+      if (s === "completed") badgeClass = "badge-success";
+      else if (s === "pending") badgeClass = "badge-warning";
+      else if (s === "failed") badgeClass = "badge-danger";
+      else if (s === "refunded") badgeClass = "badge-neutral";
     }
   }
 

@@ -61,8 +61,16 @@ async function fetchMenuItems() {
     populateCategoryFilter();
     renderFilteredMenu();
   } catch (err) {
-    console.error("Unexpected error in fetchMenuItems:", err);
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Unexpected error loading menu.</td></tr>`;
+    console.error("Unexpected error rendering menu items:", err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state">
+          <div class="empty-state-title" style="color: #b91c1c;">Error Rendering Menu</div>
+          <p class="empty-state-text">${escapeHtml(err.message || "An unexpected error occurred while rendering the menu.")}</p>
+        </td>
+      </tr>
+    `;
+    showToast("Error rendering menu items", "error");
   }
 }
 
@@ -93,78 +101,90 @@ function renderFilteredMenu() {
   const tbody = document.getElementById("menu-table-body");
   if (!tbody) return;
 
-  const searchVal = (document.getElementById("menu-search-input")?.value || "").toLowerCase().trim();
-  const categoryVal = document.getElementById("menu-category-filter")?.value || "";
-  const availVal = document.getElementById("menu-availability-filter")?.value || "";
+  try {
+    const searchVal = (document.getElementById("menu-search-input")?.value || "").toLowerCase().trim();
+    const categoryVal = document.getElementById("menu-category-filter")?.value || "";
+    const availVal = document.getElementById("menu-availability-filter")?.value || "";
 
-  const filtered = allMenuItems.filter((item) => {
-    // Search match
-    if (searchVal) {
-      const nameMatch = (item.name || "").toLowerCase().includes(searchVal);
-      const descMatch = (item.description || "").toLowerCase().includes(searchVal);
-      if (!nameMatch && !descMatch) return false;
-    }
+    const filtered = allMenuItems.filter((item) => {
+      // Search match
+      if (searchVal) {
+        const nameMatch = (item.name || "").toLowerCase().includes(searchVal);
+        const descMatch = (item.description || "").toLowerCase().includes(searchVal);
+        if (!nameMatch && !descMatch) return false;
+      }
 
-    // Category match
-    if (categoryVal && item.category !== categoryVal) {
-      return false;
-    }
+      // Category match
+      if (categoryVal && item.category !== categoryVal) {
+        return false;
+      }
 
-    // Availability match
-    if (availVal === "available" && !item.is_available) return false;
-    if (availVal === "unavailable" && item.is_available) return false;
+      // Availability match
+      if (availVal === "available" && !item.is_available) return false;
+      if (availVal === "unavailable" && item.is_available) return false;
 
-    return true;
-  });
+      return true;
+    });
 
-  if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="6" class="empty-state">
-          <div class="empty-state-title">No menu items found</div>
-          <p class="empty-state-text">Try adjusting your search filters or click "Add Menu Item" to create one.</p>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = filtered
-    .map((item) => {
-      const availLabel = item.is_available ? "Disable" : "Enable";
-      const availBtnClass = item.is_available ? "btn-secondary" : "btn-primary";
-
-      return `
-        <tr data-item-id="${escapeHtml(item.menu_item_id)}">
-          <td><strong>${escapeHtml(item.name)}</strong></td>
-          <td><span class="badge badge-neutral">${escapeHtml(item.category)}</span></td>
-          <td style="max-width: 280px; font-size: 0.82rem; color: var(--color-text-secondary);">
-            ${escapeHtml(item.description || "—")}
-          </td>
-          <td class="cell-numeric" style="font-weight: 600;">${formatCurrency(item.price)}</td>
-          <td>${renderBadge(item.is_available, "availability")}</td>
-          <td class="cell-actions">
-            <button type="button" class="btn ${availBtnClass} btn-sm btn-toggle-avail" title="${availLabel} dish" style="margin-right: 4px;">
-              ${availLabel}
-            </button>
-            <button type="button" class="btn btn-icon btn-edit-menu" title="Edit dish">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-              </svg>
-            </button>
-            <button type="button" class="btn btn-icon btn-icon-danger btn-delete-menu" title="Delete dish">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-              </svg>
-            </button>
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty-state">
+            <div class="empty-state-title">No menu items found</div>
+            <p class="empty-state-text">Try adjusting your search filters or click "Add Menu Item" to create one.</p>
           </td>
         </tr>
       `;
-    })
-    .join("");
+      return;
+    }
 
-  attachRowActionListeners();
+    tbody.innerHTML = filtered
+      .map((item) => {
+        const availLabel = item.is_available ? "Disable" : "Enable";
+        const availBtnClass = item.is_available ? "btn-secondary" : "btn-primary";
+
+        return `
+          <tr data-item-id="${escapeHtml(item.menu_item_id)}">
+            <td><strong>${escapeHtml(item.name)}</strong></td>
+            <td><span class="badge badge-neutral">${escapeHtml(item.category)}</span></td>
+            <td style="max-width: 280px; font-size: 0.82rem; color: var(--color-text-secondary);">
+              ${escapeHtml(item.description || "—")}
+            </td>
+            <td class="cell-numeric" style="font-weight: 600;">${formatCurrency(item.price)}</td>
+            <td>${renderBadge(item.is_available, "availability")}</td>
+            <td class="cell-actions">
+              <button type="button" class="btn ${availBtnClass} btn-sm btn-toggle-avail" title="${availLabel} dish" style="margin-right: 4px;">
+                ${availLabel}
+              </button>
+              <button type="button" class="btn btn-icon btn-edit-menu" title="Edit dish">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </button>
+              <button type="button" class="btn btn-icon btn-icon-danger btn-delete-menu" title="Delete dish">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    attachRowActionListeners();
+  } catch (err) {
+    console.error("Error rendering filtered menu:", err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state">
+          <div class="empty-state-title" style="color: #b91c1c;">Error Rendering Menu</div>
+          <p class="empty-state-text">${escapeHtml(err.message || "Failed to render menu items.")}</p>
+        </td>
+      </tr>
+    `;
+  }
 }
 
 /**
