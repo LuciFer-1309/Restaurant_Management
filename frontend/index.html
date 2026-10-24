@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Management System — Staff Portal</title>
+  <meta name="description" content="Professional restaurant management system for dining room tables, orders, reservations, menu items, and customer billing.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Configuration Banner (Displayed if Supabase credentials are placeholders)
+       ======================================================================== -->
+  <div id="config-banner" class="config-banner" style="display: none;" role="alert">
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+    </svg>
+    <div class="config-banner-content">
+      <div class="config-banner-title">Supabase Project Configuration Required</div>
+      <div id="config-banner-text">
+        The application is currently using placeholder credentials. Please update <code>frontend/js/config.js</code> with your actual Supabase <strong>Project URL</strong> and <strong>Publishable/Anon Key</strong>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Authentication View (Staff Login Screen)
+       ======================================================================== -->
+  <div id="auth-section" class="auth-wrapper" style="display: none;">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="auth-logo-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+            <path d="M7 2v20"/>
+            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+          </svg>
+        </div>
+        <h1>Staff Sign In</h1>
+        <p>Restaurant Management System Portal</p>
+      </div>
+
+      <div class="auth-notice">
+        <strong>Staff Access Only:</strong> Log in with your Supabase staff account. Accounts are provisioned through the Supabase Authentication dashboard.
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Staff Email <span class="required">*</span></label>
+          <input type="email" id="login-email" class="form-control" placeholder="staff@restaurant.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password <span class="required">*</span></label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div id="login-error" class="form-hint" style="color: #dc2626; margin-bottom: 12px; display: none;"></div>
+
+        <button type="submit" id="login-submit-btn" class="btn btn-primary" style="width: 100%;">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       Authenticated Application Shell
+       ======================================================================== -->
+  <div id="app-shell" class="app-layout" style="display: none;">
+    
+    <!-- Mobile Backdrop Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <!-- Navigation Sidebar -->
+    <aside id="sidebar" class="sidebar" aria-label="Main Navigation">
+      <div class="sidebar-header">
+        <div class="sidebar-brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+            <path d="M7 2v20"/>
+            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+          </svg>
+        </div>
+        <div>
+          <div class="sidebar-brand-text">GourmetOS</div>
+          <div class="sidebar-brand-sub">Management</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Operations</div>
+
+        <button type="button" class="nav-link active" data-view="dashboard" id="nav-dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          Dashboard
+        </button>
+
+        <button type="button" class="nav-link" data-view="menu" id="nav-menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          Menu Management
+        </button>
+
+        <button type="button" class="nav-link" data-view="orders" id="nav-orders">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+            <path d="M3 6h18"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+          Orders & Billing
+        </button>
+
+        <button type="button" class="nav-link" data-view="reservations" id="nav-reservations">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Reservations
+        </button>
+
+        <div class="nav-section-title">Floor & Guests</div>
+
+        <button type="button" class="nav-link" data-view="tables" id="nav-tables">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="10" rx="2"/>
+            <path d="M4 14v6"/>
+            <path d="M20 14v6"/>
+            <path d="M8 4v-2"/>
+            <path d="M16 4v-2"/>
+          </svg>
+          Restaurant Tables
+        </button>
+
+        <button type="button" class="nav-link" data-view="customers" id="nav-customers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Customers
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="staff-profile">
+          <div class="staff-avatar" id="staff-avatar">S</div>
+          <div class="staff-info">
+            <div class="staff-email" id="staff-email">staff@restaurant.com</div>
+            <div class="staff-role">Staff Member</div>
+          </div>
+        </div>
+        <button type="button" id="btn-logout" class="btn-logout" title="Sign out of system">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+      
+      <!-- Top Bar Header -->
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <button type="button" id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="Toggle navigation menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <h1 id="page-title" class="page-title">Dashboard</h1>
+        </div>
+
+        <div class="top-bar-right">
+          <button type="button" id="btn-refresh-view" class="btn btn-secondary btn-sm" title="Refresh data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <!-- View Containers -->
+      <main class="content-body">
+
+        <!-- ================================================================
+             1. DASHBOARD VIEW
+             ================================================================ -->
+        <section id="view-dashboard" class="view-section active" aria-labelledby="page-title">
+          
+          <!-- Key Metrics Grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Total Menu Items</span>
+                <span class="stat-value" id="dash-menu-count">—</span>
+                <span class="stat-subtext" id="dash-menu-sub">Active catalog dishes</span>
+              </div>
+              <div class="stat-icon stat-icon-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Registered Customers</span>
+                <span class="stat-value" id="dash-customer-count">—</span>
+                <span class="stat-subtext">Total guest profiles</span>
+              </div>
+              <div class="stat-icon stat-icon-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Today's Orders</span>
+                <span class="stat-value" id="dash-order-count">—</span>
+                <span class="stat-subtext" id="dash-order-sub">Orders placed today</span>
+              </div>
+              <div class="stat-icon stat-icon-amber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                  <path d="M3 6h18"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Completed Revenue</span>
+                <span class="stat-value" id="dash-revenue-count">—</span>
+                <span class="stat-subtext">Total completed payments</span>
+              </div>
+              <div class="stat-icon stat-icon-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"/>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floor Overview & Recent Activity -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+            
+            <!-- Recent Orders Card -->
+            <div class="card" style="margin-bottom: 0;">
+              <div class="card-header">
+                <div>
+                  <h2 class="card-title">Recent Orders</h2>
+                  <div class="card-subtitle">Latest orders processed in the system</div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" id="dash-view-all-orders">View All Orders</button>
+              </div>
+              <div class="card-body" style="padding: 0;">
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                        <th class="cell-numeric">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dash-recent-orders-body">
+                      <tr>
+                        <td colspan="6" class="empty-state">Loading recent orders...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table Occupancy Card -->
+            <div class="card" style="margin-bottom: 0;">
+              <div class="card-header">
+                <h2 class="card-title">Table Occupancy</h2>
+                <div class="card-subtitle">Dining room status</div>
+              </div>
+              <div class="card-body">
+                <div id="dash-tables-summary" style="display: flex; flex-direction: column; gap: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #ecfdf5; border-radius: var(--radius-sm);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span class="badge badge-success">Available</span>
+                    </div>
+                    <strong id="dash-tables-avail" style="font-size: 1.1rem; color: #15803d;">—</strong>
+                  </div>
+
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #fef3c7; border-radius: var(--radius-sm);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span class="badge badge-warning">Occupied</span>
+                    </div>
+                    <strong id="dash-tables-occ" style="font-size: 1.1rem; color: #b45309;">—</strong>
+                  </div>
+
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #e0f2fe; border-radius: var(--radius-sm);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span class="badge badge-info">Reserved</span>
+                    </div>
+                    <strong id="dash-tables-res" style="font-size: 1.1rem; color: #0369a1;">—</strong>
+                  </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: center;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="dash-view-all-tables" style="width: 100%;">
+                    Manage Tables Floor
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================================================================
+             2. MENU MANAGEMENT VIEW
+             ================================================================ -->
+        <section id="view-menu" class="view-section" aria-labelledby="menu-title">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title" id="menu-title">Menu Catalog</h2>
+                <div class="card-subtitle">Manage menu items, categories, pricing, and availability</div>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-add-menu-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Menu Item
+              </button>
+            </div>
+
+            <div class="card-body">
+              <!-- Filters and Search -->
+              <div class="filter-bar">
+                <div class="search-input-wrapper">
+                  <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input type="text" id="menu-search-input" class="form-control search-input" placeholder="Search dish by name or description...">
+                </div>
+
+                <select id="menu-category-filter" class="form-control filter-select">
+                  <option value="">All Categories</option>
+                </select>
+
+                <select id="menu-availability-filter" class="form-control filter-select">
+                  <option value="">All Availability</option>
+                  <option value="available">Available Only</option>
+                  <option value="unavailable">Unavailable Only</option>
+                </select>
+              </div>
+
+              <!-- Menu Table -->
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Dish Name</th>
+                      <th>Category</th>
+                      <th>Description</th>
+                      <th class="cell-numeric">Price</th>
+                      <th>Availability</th>
+                      <th class="cell-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="menu-table-body">
+                    <tr>
+                      <td colspan="6" class="empty-state">Loading menu items...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             3. ORDERS & BILLING VIEW
+             ================================================================ -->
+        <section id="view-orders" class="view-section" aria-labelledby="orders-title">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title" id="orders-title">Orders & Billing</h2>
+                <div class="card-subtitle">Manage customer orders, POS checkout, status updates, and payment collection</div>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-create-order">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                New Order
+              </button>
+            </div>
+
+            <div class="card-body">
+              <!-- Filters and Search -->
+              <div class="filter-bar">
+                <div class="search-input-wrapper">
+                  <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input type="text" id="order-search-input" class="form-control search-input" placeholder="Search by Order ID or customer...">
+                </div>
+
+                <select id="order-status-filter" class="form-control filter-select">
+                  <option value="">All Statuses</option>
+                  <option value="placed">Placed</option>
+                  <option value="preparing">Preparing</option>
+                  <option value="ready">Ready</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+
+                <select id="order-type-filter" class="form-control filter-select">
+                  <option value="">All Types</option>
+                  <option value="dine_in">Dine In</option>
+                  <option value="takeaway">Takeaway</option>
+                  <option value="delivery">Delivery</option>
+                </select>
+              </div>
+
+              <!-- Orders Table -->
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Order #</th>
+                      <th>Customer</th>
+                      <th>Table / Service</th>
+                      <th>Type</th>
+                      <th>Order Time</th>
+                      <th>Status</th>
+                      <th class="cell-numeric">Items Total</th>
+                      <th>Payment Status</th>
+                      <th class="cell-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orders-table-body">
+                    <tr>
+                      <td colspan="9" class="empty-state">Loading orders...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             4. RESERVATIONS VIEW
+             ================================================================ -->
+        <section id="view-reservations" class="view-section" aria-labelledby="reservations-title">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title" id="reservations-title">Table Reservations</h2>
+                <div class="card-subtitle">Manage guest bookings, seating assignments, party sizes, and reservation status</div>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-add-reservation">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                New Reservation
+              </button>
+            </div>
+
+            <div class="card-body">
+              <!-- Filters and Search -->
+              <div class="filter-bar">
+                <div class="search-input-wrapper">
+                  <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input type="text" id="reservation-search-input" class="form-control search-input" placeholder="Search guest name or phone...">
+                </div>
+
+                <select id="reservation-status-filter" class="form-control filter-select">
+                  <option value="">All Statuses</option>
+                  <option value="booked">Booked</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <!-- Reservations Table -->
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Booking #</th>
+                      <th>Guest Name</th>
+                      <th>Phone</th>
+                      <th>Table</th>
+                      <th>Reservation Date & Time</th>
+                      <th>Party Size</th>
+                      <th>Status</th>
+                      <th class="cell-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reservations-table-body">
+                    <tr>
+                      <td colspan="8" class="empty-state">Loading reservations...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             5. RESTAURANT TABLES VIEW
+             ================================================================ -->
+        <section id="view-tables" class="view-section" aria-labelledby="tables-title">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title" id="tables-title">Restaurant Tables</h2>
+                <div class="card-subtitle">Manage dining floor layout, table numbers, seating capacities, and real-time occupancy</div>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-add-table">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Table
+              </button>
+            </div>
+
+            <div class="card-body">
+              <div class="filter-bar">
+                <select id="tables-status-filter" class="form-control filter-select">
+                  <option value="">All Statuses</option>
+                  <option value="available">Available Only</option>
+                  <option value="occupied">Occupied Only</option>
+                  <option value="reserved">Reserved Only</option>
+                </select>
+              </div>
+
+              <!-- Visual Cards Grid for Tables -->
+              <div id="tables-grid-container" class="tables-grid">
+                <!-- Dynamically populated table cards -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             6. CUSTOMERS VIEW
+             ================================================================ -->
+        <section id="view-customers" class="view-section" aria-labelledby="customers-title">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title" id="customers-title">Customer Directory</h2>
+                <div class="card-subtitle">Guest contact records, phone numbers, and reservation history</div>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-add-customer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Customer
+              </button>
+            </div>
+
+            <div class="card-body">
+              <!-- Search bar -->
+              <div class="filter-bar">
+                <div class="search-input-wrapper">
+                  <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input type="text" id="customer-search-input" class="form-control search-input" placeholder="Search customer by name, phone, or email...">
+                </div>
+              </div>
+
+              <!-- Customers Table -->
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Guest Name</th>
+                      <th>Phone Number</th>
+                      <th>Email Address</th>
+                      <th>Registered On</th>
+                      <th class="cell-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="customers-table-body">
+                    <tr>
+                      <td colspan="6" class="empty-state">Loading customers...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODALS & DIALOGS
+       ======================================================================== -->
+
+  <!-- 1. Confirmation Modal -->
+  <div id="confirm-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="confirm-modal-title" class="modal-title">Confirm Action</h3>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-modal-message" style="color: var(--color-text-secondary); line-height: 1.5;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="confirm-modal-cancel" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="confirm-modal-ok" class="btn btn-danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Menu Item Form Modal (Add / Edit) -->
+  <div id="menu-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="menu-modal-title" class="modal-title">Add Menu Item</h3>
+        <button type="button" class="modal-close" data-close="menu-modal" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="menu-item-form">
+        <div class="modal-body">
+          <input type="hidden" id="menu-item-id">
+          
+          <div class="form-group">
+            <label class="form-label" for="menu-item-name">Dish / Item Name <span class="required">*</span></label>
+            <input type="text" id="menu-item-name" class="form-control" placeholder="e.g. Truffle Mushroom Risotto" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="menu-item-category">Category <span class="required">*</span></label>
+              <input type="text" id="menu-item-category" class="form-control" placeholder="e.g. Main Course, Appetizer, Drinks" required list="category-suggestions">
+              <datalist id="category-suggestions">
+                <option value="Appetizer">
+                <option value="Main Course">
+                <option value="Dessert">
+                <option value="Beverage">
+                <option value="Side">
+                <option value="Special">
+              </datalist>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="menu-item-price">Price ($) <span class="required">*</span></label>
+              <input type="number" id="menu-item-price" class="form-control" placeholder="0.00" min="0" step="0.01" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="menu-item-desc">Description</label>
+            <textarea id="menu-item-desc" class="form-control" placeholder="Ingredients, dietary notes, or preparation style..."></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="checkbox-group">
+              <input type="checkbox" id="menu-item-available" checked>
+              <span>Available for ordering</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="menu-modal">Cancel</button>
+          <button type="submit" id="menu-item-submit-btn" class="btn btn-primary">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Customer Form Modal (Add / Edit) -->
+  <div id="customer-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="customer-modal-title" class="modal-title">Add Customer</h3>
+        <button type="button" class="modal-close" data-close="customer-modal" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="customer-form">
+        <div class="modal-body">
+          <input type="hidden" id="customer-id">
+
+          <div class="form-group">
+            <label class="form-label" for="customer-name">Full Name <span class="required">*</span></label>
+            <input type="text" id="customer-name" class="form-control" placeholder="e.g. John Doe" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="customer-phone">Phone Number <span class="required">*</span></label>
+            <input type="tel" id="customer-phone" class="form-control" placeholder="e.g. +1 555-0192" required>
+            <div class="form-hint">Must be unique across customer records.</div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="customer-email">Email Address</label>
+            <input type="email" id="customer-email" class="form-control" placeholder="e.g. john@example.com">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="customer-modal">Cancel</button>
+          <button type="submit" id="customer-submit-btn" class="btn btn-primary">Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Table Form Modal (Add / Edit) -->
+  <div id="table-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="table-modal-title" class="modal-title">Add Restaurant Table</h3>
+        <button type="button" class="modal-close" data-close="table-modal" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="table-form">
+        <div class="modal-body">
+          <input type="hidden" id="table-id">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="table-number">Table Number <span class="required">*</span></label>
+              <input type="number" id="table-number" class="form-control" placeholder="e.g. 1" min="1" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="table-capacity">Seating Capacity <span class="required">*</span></label>
+              <input type="number" id="table-capacity" class="form-control" placeholder="e.g. 4" min="1" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="table-status">Status <span class="required">*</span></label>
+            <select id="table-status" class="form-control" required>
+              <option value="available">Available</option>
+              <option value="occupied">Occupied</option>
+              <option value="reserved">Reserved</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="table-modal">Cancel</button>
+          <button type="submit" id="table-submit-btn" class="btn btn-primary">Save Table</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Reservation Form Modal (Add / Edit) -->
+  <div id="reservation-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="reservation-modal-title" class="modal-title">New Reservation</h3>
+        <button type="button" class="modal-close" data-close="reservation-modal" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="reservation-form">
+        <div class="modal-body">
+          <input type="hidden" id="reservation-id">
+
+          <div class="form-group">
+            <label class="form-label" for="reservation-customer">Select Customer <span class="required">*</span></label>
+            <select id="reservation-customer" class="form-control" required>
+              <option value="">-- Choose registered customer --</option>
+            </select>
+            <div class="form-hint">Need a new customer? Add them first under the Customers tab.</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="reservation-table">Assigned Table (Optional)</label>
+              <select id="reservation-table" class="form-control">
+                <option value="">-- None / Unassigned --</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="reservation-party-size">Party Size <span class="required">*</span></label>
+              <input type="number" id="reservation-party-size" class="form-control" min="1" value="2" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="reservation-time">Date & Time <span class="required">*</span></label>
+              <input type="datetime-local" id="reservation-time" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="reservation-status">Status <span class="required">*</span></label>
+              <select id="reservation-status" class="form-control" required>
+                <option value="booked">Booked</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-close="reservation-modal">Cancel</button>
+          <button type="submit" id="reservation-submit-btn" class="btn btn-primary">Save Reservation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. Create Order Modal (POS Style: Menu Browser + Cart) -->
+  <div id="create-order-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Order</h3>
+        <button type="button" class="modal-close" data-close="create-order-modal" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        
+        <!-- Order Meta Row -->
+        <div class="form-row" style="margin-bottom: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="order-create-type">Order Type <span class="required">*</span></label>
+            <select id="order-create-type" class="form-control" required>
+              <option value="dine_in">Dine In</option>
+              <option value="takeaway">Takeaway</option>
+              <option value="delivery">Delivery</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="order-create-table">Table (for Dine-in)</label>
+            <select id="order-create-table" class="form-control">
+              <option value="">-- No Table Assigned --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="order-create-customer">Customer (Optional)</label>
+            <select id="order-create-customer" class="form-control">
+              <option value="">-- Walk-in Guest --</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- POS Split: Catalog & Cart -->
+        <div class="pos-layout">
+          
+          <!-- Catalog Column -->
+          <div>
+            <div class="filter-bar" style="margin-bottom: 12px;">
+              <div class="search-input-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="pos-menu-search" class="form-control search-input" placeholder="Search dish...">
+              </div>
+              <select id="pos-category-filter" class="form-control filter-select">
+                <option value="">All Categories</option>
+              </select>
+            </div>
+
+            <div id="pos-menu-grid" class="menu-picker-grid">
+              <!-- Available menu items inserted dynamically -->
+            </div>
+          </div>
+
+          <!-- Cart Column -->
+          <div class="cart-card">
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--color-border); font-weight: 700; font-size: 0.95rem;">
+              Order Items (<span id="cart-item-count">0</span>)
+            </div>
+
+            <div id="pos-cart-items" class="cart-items">
+              <div class="empty-state" style="padding: 30px 10px;">
+                <p class="empty-state-text" style="font-size: 0.82rem;">Cart is empty. Click dishes on the left to add items.</p>
+              </div>
+            </div>
+
+            <div class="cart-total-box">
+              <div class="cart-summary-line">
+                <span>Items Subtotal</span>
+                <span id="cart-subtotal">$0.00</span>
+              </div>
+              <div class="cart-summary-line cart-summary-total">
+                <span>Order Total</span>
+                <span id="cart-total">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close="create-order-modal">Cancel</button>
+        <button type="button" id="btn-submit-order" class="btn btn-primary" disabled>
+          Place Order
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Order Details & Payment Modal -->
+  <div id="order-details-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Order #<span id="detail-order-id">—</span></h3>
+          <div id="detail-order-meta" class="card-subtitle">Placed on —</div>
+        </div>
+        <button type="button" class="modal-close" data-close="order-details-modal" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Order Header Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px;">
+          <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+            <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase;">Customer</div>
+            <div id="detail-customer" style="font-weight: 600; font-size: 0.92rem; margin-top: 2px;">—</div>
+          </div>
+
+          <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+            <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase;">Table / Type</div>
+            <div id="detail-table-type" style="font-weight: 600; font-size: 0.92rem; margin-top: 2px;">—</div>
+          </div>
+
+          <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+            <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase;">Order Status</div>
+            <div id="detail-order-status-badge" style="margin-top: 4px;">—</div>
+          </div>
+
+          <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+            <div style="font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase;">Payment Status</div>
+            <div id="detail-payment-status-badge" style="margin-top: 4px;">—</div>
+          </div>
+        </div>
+
+        <!-- Quick Status Update Controls -->
+        <div style="background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: gap: 12px;">
+          <span style="font-size: 0.88rem; font-weight: 600;">Update Kitchen / Order Status:</span>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="order-status-quick-btns">
+            <button type="button" class="btn btn-secondary btn-sm" data-status="placed">Placed</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-status="preparing">Preparing</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-status="ready">Ready</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-status="completed">Completed</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-status="cancelled" style="color: #dc2626;">Cancelled</button>
+          </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 10px;">Ordered Items</h4>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Item Name</th>
+                  <th class="cell-numeric">Unit Price (Saved)</th>
+                  <th class="cell-numeric">Quantity</th>
+                  <th class="cell-numeric">Line Total</th>
+                </tr>
+              </thead>
+              <tbody id="detail-order-items-body">
+                <tr><td colspan="4" class="empty-state">Loading items...</td></tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th colspan="3" style="text-align: right; font-weight: 700;">Order Total:</th>
+                  <th id="detail-items-total" class="cell-numeric" style="font-weight: 700; font-size: 1.05rem;">$0.00</th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Payment Section: History & Record Payment -->
+        <div style="border-top: 2px dashed var(--color-border); padding-top: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h4 style="font-size: 0.95rem; font-weight: 700;">Payment History & Transactions</h4>
+            <div style="font-size: 0.88rem;">
+              Remaining Balance: <strong id="detail-remaining-balance" style="color: #dc2626;">$0.00</strong>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="margin-bottom: 18px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Payment #</th>
+                  <th>Date & Time</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th class="cell-numeric">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="detail-payments-body">
+                <tr><td colspan="5" class="empty-state">No payments recorded.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Record Payment Card -->
+          <div style="background: #f8fafc; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 16px;">
+            <h5 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 12px;">Record Payment for this Order</h5>
+            <form id="record-payment-form">
+              <div class="form-row">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="payment-amount">Payment Amount ($) <span class="required">*</span></label>
+                  <input type="number" id="payment-amount" class="form-control" placeholder="0.00" min="0.01" step="0.01" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="payment-method">Payment Method <span class="required">*</span></label>
+                  <select id="payment-method" class="form-control" required>
+                    <option value="card">Credit / Debit Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="upi">UPI / Digital</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="payment-status">Payment Status <span class="required">*</span></label>
+                  <select id="payment-status" class="form-control" required>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="failed">Failed</option>
+                    <option value="refunded">Refunded</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0; display: flex; align-items: flex-end;">
+                  <button type="submit" id="btn-submit-payment" class="btn btn-primary" style="width: 100%;">
+                    Record Payment
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close="order-details-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Application Entry Point ES Module -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
